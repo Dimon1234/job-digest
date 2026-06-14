@@ -1,1 +1,310 @@
-{"vacancies": {}, "runs": []}
+{
+  "vacancies": {
+    "adzuna_5759764428": {
+      "id": "adzuna_5759764428",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:22:58.088525+00:00",
+      "title": "Senior Java Developer Contract Dublin",
+      "company": "Adecco",
+      "location": "UK",
+      "salary_min": 70908.63,
+      "salary_max": 70908.63,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-06-11T10:32:51Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5759764428?utm_medium=api&utm_source=7a07c552",
+      "description": "Salary: £? - ? per year Requirements: Experience designing, developing, and testing real-world enterprise applications Strong hands-on Java experience, including analysis, design, and testing Experience with Spring framework modules, Spring Boot, Spring Data, Spring Test Framework, Spring RESTful services, Transaction Management, and Spring Annotations Experience using SVN, Maven, Jenkins, and Sonar Experience with JavaScript tools such as NodeJS, NPM, Jasmine, and Karma Experience developing a…",
+      "key_skills": [
+        "Java",
+        "Spring Boot",
+        "Spring",
+        "REST",
+        "Maven"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5760552816": {
+      "id": "adzuna_5760552816",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:22:58.088525+00:00",
+      "title": "Java Developer – FX Trading Technology",
+      "company": "Deloitte - Recruitment",
+      "location": "Farringdon, Central London",
+      "salary_min": 99859.78,
+      "salary_max": 99859.78,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-06-11T23:35:00Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5760552816?utm_medium=api&utm_source=7a07c552",
+      "description": "Contract Role: Java Developer – FX Trading Technology Contract Location: London. Hybrid Contract Duration: 6 months initially (with potential extension) Contract Start Date: Immediate Contract Classification: Inside IR35 Overview A leading global financial services organisation is seeking a highly technical Java Developer to join a front-office technology team supporting FX trading platforms. The successful candidate will work closely with trading desks, quantitative teams and technology stakeh…",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "inside IR35",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5759763638": {
+      "id": "adzuna_5759763638",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:22:58.088525+00:00",
+      "title": "Java Developer",
+      "company": "Purview Consultancy Services Ltd",
+      "location": "Edinburgh City Centre, Edinburgh",
+      "salary_min": 50000,
+      "salary_max": 70000,
+      "contract_type": "contract",
+      "contract_time": "full_time",
+      "created": "2026-06-11T10:32:34Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5759763638?utm_medium=api&utm_source=7a07c552",
+      "description": "Salary: £50,000 - 70,000 per year Requirements: We require strong hands-on experience in Java development. We require expertise in Spring Boot and microservices architecture. We require experience with Apache Flink for real-time stream processing. We require strong knowledge of AWS cloud services. We require hands-on experience with Databricks and large-scale data platforms. We require a good understanding of distributed systems and scalable application design. We require experience with REST A…",
+      "key_skills": [
+        "Java",
+        "Spring Boot",
+        "Spring",
+        "Microservices",
+        "AWS",
+        "REST"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5759762595": {
+      "id": "adzuna_5759762595",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:22:58.088525+00:00",
+      "title": "Backend Java Developer",
+      "company": "Teksystems",
+      "location": "Binfield, Bracknell",
+      "salary_min": 40000,
+      "salary_max": 70000,
+      "contract_type": "contract",
+      "contract_time": "full_time",
+      "created": "2026-06-11T10:32:10Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5759762595?utm_medium=api&utm_source=7a07c552",
+      "description": "Salary: £40,000 - 70,000 per year Requirements: We require 4 years of professional experience in Java development. We require strong experience designing and building microservices-based architectures. We require hands-on experience with event-driven systems, with Kafka preferred. We require a solid understanding of RESTful APIs and distributed systems. We require experience with CI/CD pipelines such as Jenkins, GitHub Actions, or GitLab CI. We require proficiency with relational and/or NoSQL d…",
+      "key_skills": [
+        "Java",
+        "Microservices",
+        "Kafka",
+        "CI/CD",
+        "REST",
+        "Event-driven",
+        "Git"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5758568574": {
+      "id": "adzuna_5758568574",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Senior Java Full Stack Developer",
+      "company": "Atrium Workforce Solutions Ltd",
+      "location": "London, UK",
+      "salary_min": 175500,
+      "salary_max": 208000,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-06-10T15:43:10Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/land/ad/5758568574?se=es6OfxZo8RGfB72z_DrYeQ&utm_medium=api&utm_source=7a07c552&v=82D876DE39D13BD6443D73CCA3369BBA00A8A2F8",
+      "description": "Contract Role - Senior Java Full Stack Developer – London/Hybrid – 10 months initial – Inside IR35 Role Overview: Job Title: Senior Java Full Stack Developer Location: Hybrid – 3- 4 days onsite per week in London Contract Type: Contract Duration: 10 months initial Rate: £675.11 per day PAYE or £800 per day Umbrella Sector: Banking We are looking for a Java Full Stack contractor with strong engineering experience across backend, frontend, and delivery automation, with a particular emphasis on CI…",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "inside IR35",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5743885278": {
+      "id": "adzuna_5743885278",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Senior Full Stack Developer (React & C#.NET)",
+      "company": "Adecco",
+      "location": "Farringdon, Central London",
+      "salary_min": 85454.03,
+      "salary_max": 85454.03,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-05-28T21:56:41Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/land/ad/5743885278?se=es6OfxZo8RGfB72z_DrYeQ&utm_medium=api&utm_source=7a07c552&v=8795FDC47FB7C07074A3656E131F2F2075D62A51",
+      "description": "Job Title: Senior Full Stack Developer (React & Java script) Contract Length: 12 Months Location: London - 3 Days a week Daily Rate: Circa £650/Day (Inside IR35) About the Role Join our dynamic team as a Senior Full Stack Developer, where your expertise in React JS and Java script Core will shine! We are looking for a tech-savvy professional with a passion for building scalable applications within the financial sector. This is an exciting opportunity to work with cloud-native architectures and …",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "inside IR35",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5734115733": {
+      "id": "adzuna_5734115733",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Contract Java Engineers",
+      "company": "Ocho People",
+      "location": "Ormeau, Belfast",
+      "salary_min": 130000,
+      "salary_max": 143000,
+      "contract_type": "permanent",
+      "contract_time": "full_time",
+      "created": "2026-05-19T15:51:11Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5734115733?utm_medium=api&utm_source=7a07c552",
+      "description": "Job Title Contract Senior Java Engineer Overview Ocho is partnering with a global technology organisation to hire a Contract Senior Java Engineer to join a high-performing engineering team working on large-scale enterprise platforms within a real-time data environment. This is an opportunity to work on complex, business-critical systems while gaining exposure to modern cloud technologies, DevOps tooling and large-scale distributed architectures. The organisation is investing heavily in cloud tr…",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5733270539": {
+      "id": "adzuna_5733270539",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Senior Java Engineer (Contract)",
+      "company": "AND Digital",
+      "location": "Bradford, West Yorkshire",
+      "salary_min": 54440.69,
+      "salary_max": 54440.69,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-05-18T17:47:18Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5733270539?utm_medium=api&utm_source=7a07c552",
+      "description": "We are recruiting for a Senior Java Engineer for a contract role to start ASAP. On-site: 2 dpw in Bradford Key skills: strong experience in Java and comfortable with TDD (test-driven development). Who We Are: AND Digital are a tech company focused on accelerating digital delivery and dedicated to closing the digital skills gap. We’ve been helping organisations build better digital products and stronger digital teams since 2014. We believe our work should always make a remarkable impact for our …",
+      "key_skills": [
+        "Java",
+        "TDD",
+        "Git"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5741316662": {
+      "id": "adzuna_5741316662",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Contract Lead Java Developer",
+      "company": "Inspired Thinking Group ",
+      "location": "Birmingham, West Midlands",
+      "salary_min": 55774.84,
+      "salary_max": 55774.84,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-05-26T17:11:56Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/details/5741316662?utm_medium=api&utm_source=7a07c552",
+      "description": "Java is your bag and you're a real perfectionist. You'll have a background in hands-on software delivery, will be passionate about everything Java and driven by the world of tech. Operating right at the heart of our Backend development function, you'll work on some of our most exciting business critical and complex software applications. We have a number of exiting opportunities available across our development teams here at Storyteq and have plenty going on. If you haven't heard of us already,…",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    },
+    "adzuna_5741295589": {
+      "id": "adzuna_5741295589",
+      "source": "adzuna",
+      "fetched_at": "2026-06-14T17:28:36.903834+00:00",
+      "title": "Senior Web Developer",
+      "company": "Office Angels",
+      "location": "Basingstoke, Hampshire",
+      "salary_min": 54007.04,
+      "salary_max": 54007.04,
+      "contract_type": "contract",
+      "contract_time": "",
+      "created": "2026-05-26T15:32:58Z",
+      "redirect_url": "https://www.adzuna.co.uk/jobs/land/ad/5741295589?se=PBbcghZo8RGfB72z_DrYeQ&utm_medium=api&utm_source=7a07c552&v=3C89028B7A8FA868F0E7F137D707A099F0752654",
+      "description": "Full Stack Developer (Java / React) - Contract Basingstoke (Hybrid Working) Competitive Day Rate Immediate Start We are currently recruiting for a Full Stack Developer to join a leading organisation on a contract basis . This is an exciting opportunity to work on a high-impact greenfield project , modernising legacy systems using cutting-edge technologies. The Role You will play a key role in the redesign and redevelopment of legacy in-house applications , while also supporting existing systems…",
+      "key_skills": [
+        "Java"
+      ],
+      "ir35_status": "not specified",
+      "overseas_notes": "no restriction stated",
+      "remote": false
+    }
+  },
+  "runs": [
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:04:32.085741+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:04:51.290631+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:08:44.476723+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:09:37.262466+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:10:09.253777+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:11:36.548300+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:19:24.089748+00:00",
+      "fetched": 0,
+      "new": 0,
+      "total_in_store": 0
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:22:58.088525+00:00",
+      "fetched": 5,
+      "new": 4,
+      "total_in_store": 4
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T17:28:36.903834+00:00",
+      "fetched": 12,
+      "new": 6,
+      "total_in_store": 10
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T18:11:53.810080+00:00",
+      "fetched": 5,
+      "new": 0,
+      "total_in_store": 10
+    },
+    {
+      "date": "2026-06-14",
+      "ts": "2026-06-14T18:14:16.862126+00:00",
+      "fetched": 5,
+      "new": 0,
+      "total_in_store": 10
+    }
+  ]
+}
