@@ -33,6 +33,8 @@ SMTP_PASS        = os.getenv("SMTP_PASS", "")
 TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 DAYS_LOOKBACK    = int(os.getenv("DAYS_LOOKBACK", "0"))  # 0 = auto (1d weekday / 3d weekend)
+ENRICH           = os.getenv("ENRICH", "1") != "0"       # fetch full JD pages (default on)
+ENRICH_TIMEOUT   = int(os.getenv("ENRICH_TIMEOUT", "12"))
 _default_store = Path(__file__).parent / "data" / "job_vacancies.json"
 VACANCIES_FILE = Path(os.getenv("VACANCIES_FILE", _default_store))
 
@@ -264,6 +266,113 @@ def parse_web_result(hit: dict) -> dict | None:
         "overseas_notes": extract_overseas(text),
         "remote":         is_remote(text),
     }
+
+
+# ── Full-description enrichment (crawl redirect_url) ──────────────────────────
+
+class _TextExtractor:
+    """Minimal HTML→text via stdlib, skipping script/style/nav."""
+    def __init__(self):
+        from html.parser import HTMLParser
+
+        outer = self
+        class _P(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.parts = []
+                self.skip = 0
+            def handle_starttag(self, tag, attrs):
+                if tag in ("script", "style", "nav", "header", "footer", "svg"):
+                    self.skip += 1
+            def handle_endtag(self, tag):
+                if tag in ("script", "style", "nav", "header", "footer", "svg") and self.skip:
+                    self.skip -= 1
+                if tag in ("p", "br", "li", "div", "h1", "h2", "h3", "tr"):
+                    self.parts.append("\n")
+            def handle_data(self, data):
+                if not self.skip:
+                    t = data.strip()
+                    if t:
+                        self.parts.append(t)
+        self._p = _P()
+
+    def to_text(self, html: str) -> str:
+        import re as _re
+        self._p.feed(html)
+        text = " ".join(self._p.parts)
+        text = _re.sub(r"\n\s*\n+", "\n", text)
+        text = _re.sub(r"[ \t]{2,}", " ", text)
+        return text.strip()
+
+
+def fetch_full_description(url: str) -> str:
+    """Fetch a job page and extract readable text. Returns '' on failure."""
+    if not url:
+        return ""
+    req = urllib.request.Request(url, headers={
+        "User-Agent": ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/124.0 Safari/537.36"),
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-GB,en;q=0.9",
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=ENRICH_TIMEOUT) as r:
+            charset = r.headers.get_content_charset() or "utf-8"
+            html = r.read(800_000).decode(charset, errors="replace")
+    except Exception as e:
+        return ""
+
+    try:
+        # Prefer BeautifulSoup if available (cleaner), else stdlib
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, "html.parser")
+            for tag in soup(["script", "style", "nav", "header", "footer", "svg"]):
+                tag.decompose()
+            text = soup.get_text("\n", strip=True)
+            import re as _re
+            text = _re.sub(r"\n\s*\n+", "\n", text)
+            return text.strip()
+        except ImportError:
+            return _TextExtractor().to_text(html)
+    except Exception:
+        return ""
+
+
+def enrich_descriptions(jobs: list[dict]) -> None:
+    """In-place: replace truncated descriptions with full page text where possible."""
+    if not ENRICH:
+        print("[ENRICH] Disabled (ENRICH=0)", file=sys.stderr)
+        return
+
+    import time
+    ok = fail = 0
+    total = len(jobs)
+    for i, job in enumerate(jobs, 1):
+        snippet = job.get("description", "")
+        full = fetch_full_description(job.get("redirect_url", ""))
+        # Keep full text only if it's meaningfully longer than the snippet
+        if full and len(full) > max(len(snippet) + 100, 400):
+            job["description"]        = full[:20000]      # cap to keep file sane
+            job["description_full"]   = True
+            job["description_chars"]  = len(full)
+            # Re-extract derived fields from the richer text
+            text = job.get("title", "") + " " + full
+            job["key_skills"]     = extract_skills(text)
+            job["ir35_status"]    = extract_ir35(text)
+            job["overseas_notes"] = extract_overseas(text)
+            job["remote"]         = is_remote(text)
+            ok += 1
+        else:
+            job["description_full"]  = False
+            job["description_chars"] = len(snippet)
+            fail += 1
+        if i % 10 == 0 or i == total:
+            print(f"[ENRICH] {i}/{total}  full={ok} snippet-only={fail}", file=sys.stderr)
+        time.sleep(0.4)  # be polite to job boards
+    print(f"[ENRICH] Done: {ok} enriched, {fail} kept as snippet", file=sys.stderr)
+
 
 SKILLS_VOCAB = [
     "Kotlin", "Java", "Spring Boot", "Spring", "Microservices", "Kafka",
@@ -605,6 +714,10 @@ def main() -> None:
 
     filtered = filter_jobs(raw)
     print(f"[INFO] {len(filtered)} passed senior/Kotlin/Java/overseas filter", file=sys.stderr)
+
+    # Enrich with full job-page text (crawl redirect_url) so the archive
+    # stores complete descriptions for later analysis, not just snippets.
+    enrich_descriptions(filtered)
 
     store = load_store()
     new_jobs, _ = accumulate(store, filtered)
