@@ -172,7 +172,95 @@ def parse_reed(j: dict) -> dict:
     }
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Web search (DuckDuckGo, no API key) ──────────────────────────────────────
+
+WEB_QUERIES = [
+    '"senior kotlin" contract UK remote "outside IR35"',
+    '"senior java" contract UK remote "outside IR35"',
+    '"kotlin developer" contract UK remote "per day"',
+    '"java developer" contract UK remote "outside IR35" "per day"',
+    'site:cwjobs.co.uk senior kotlin java contract remote',
+    'site:totaljobs.com senior kotlin java contract remote "outside IR35"',
+    'site:jobsite.co.uk senior kotlin java contract remote',
+    'site:contractspy.co.uk kotlin java senior',
+    'site:itjobswatch.co.uk kotlin java contract remote',
+]
+
+def fetch_web() -> list[dict]:
+    try:
+        from duckduckgo_search import DDGS
+    except ImportError:
+        print("[WEB] Skipped — install: pip install duckduckgo-search", file=sys.stderr)
+        return []
+
+    results = []
+    seen_urls: set[str] = set()
+
+    try:
+        with DDGS() as ddgs:
+            for query in WEB_QUERIES:
+                try:
+                    hits = list(ddgs.text(query, max_results=15))
+                    print(f"[WEB] '{query[:55]}': {len(hits)} results", file=sys.stderr)
+                    for h in hits:
+                        url = h.get("href", "")
+                        if url in seen_urls:
+                            continue
+                        seen_urls.add(url)
+                        job = parse_web_result(h)
+                        if job:
+                            results.append(job)
+                except Exception as e:
+                    print(f"[WEB] Query error: {e}", file=sys.stderr)
+    except Exception as e:
+        print(f"[WEB] DDGS error: {e}", file=sys.stderr)
+
+    print(f"[WEB] {len(results)} unique results total", file=sys.stderr)
+    return results
+
+
+def parse_web_result(hit: dict) -> dict | None:
+    import hashlib, re as _re
+    title = hit.get("title", "")
+    url   = hit.get("href", "")
+    body  = hit.get("body", "")
+    text  = f"{title} {body}"
+
+    # Skip non-job pages
+    if not any(k in text.lower() for k in ["contract", "kotlin", "java", "developer", "engineer"]):
+        return None
+
+    # Extract rate: £400/day, £400 per day, 400pd, £400-£500
+    rate_match = _re.search(
+        r'£\s*(\d{3,4})\s*(?:[-–]\s*£?\s*(\d{3,4}))?\s*(?:per\s+day|p/?d|/day|/d\b)',
+        text, _re.IGNORECASE
+    )
+    salary_min = salary_max = None
+    if rate_match:
+        salary_min = float(rate_match.group(1))
+        salary_max = float(rate_match.group(2)) if rate_match.group(2) else salary_min
+
+    uid = f"web_{hashlib.md5(url.encode()).hexdigest()[:12]}"
+
+    return {
+        "id":             uid,
+        "source":         "web",
+        "fetched_at":     SEARCH_TS,
+        "title":          title,
+        "company":        "",
+        "location":       "UK",
+        "salary_min":     salary_min,
+        "salary_max":     salary_max,
+        "contract_type":  "Contract",
+        "contract_time":  "",
+        "created":        SEARCH_DATE,
+        "redirect_url":   url,
+        "description":    body,
+        "key_skills":     extract_skills(text),
+        "ir35_status":    extract_ir35(text),
+        "overseas_notes": extract_overseas(text),
+        "remote":         is_remote(text),
+    }
 
 SKILLS_VOCAB = [
     "Kotlin", "Java", "Spring Boot", "Spring", "Microservices", "Kafka",
@@ -509,7 +597,7 @@ def deliver_email(body_txt: str, body_html: str, new_count: int) -> None:
 def main() -> None:
     print(f"[{SEARCH_TS}] Fetching jobs …", file=sys.stderr)
 
-    raw = fetch_adzuna() + fetch_reed()
+    raw = fetch_adzuna() + fetch_reed() + fetch_web()
     print(f"[INFO] Fetched {len(raw)} raw jobs", file=sys.stderr)
 
     filtered = filter_jobs(raw)
