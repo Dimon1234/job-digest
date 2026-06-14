@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.jobdigest.daily</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>INSTALL_DIR/run_digest.sh</string>
+  </array>
+
+  <!-- Run every day at 08:00 local time -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>INSTALL_DIR/logs/digest.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>INSTALL_DIR/logs/digest.log</string>
+
+  <!-- Re-run if Mac was asleep at scheduled time -->
+  <key>RunAtLoad</key>
+  <false/>
+
+</dict>
+</plist>
