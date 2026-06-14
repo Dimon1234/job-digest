@@ -21,15 +21,17 @@ from pathlib import Path
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-ADZUNA_APP_ID  = os.getenv("ADZUNA_APP_ID", "")
-ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "")
-REED_API_KEY   = os.getenv("REED_API_KEY", "")
-DELIVERY       = os.getenv("DELIVERY", "console").lower()
-EMAIL_TO       = os.getenv("EMAIL_TO", "")
-SMTP_HOST      = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT      = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER      = os.getenv("SMTP_USER", EMAIL_TO)
-SMTP_PASS      = os.getenv("SMTP_PASS", "")
+ADZUNA_APP_ID    = os.getenv("ADZUNA_APP_ID", "")
+ADZUNA_APP_KEY   = os.getenv("ADZUNA_APP_KEY", "")
+REED_API_KEY     = os.getenv("REED_API_KEY", "")
+DELIVERY         = os.getenv("DELIVERY", "console").lower()
+EMAIL_TO         = os.getenv("EMAIL_TO", "")
+SMTP_HOST        = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT        = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER        = os.getenv("SMTP_USER", EMAIL_TO)
+SMTP_PASS        = os.getenv("SMTP_PASS", "")
+TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 _default_store = Path(__file__).parent / "data" / "job_vacancies.json"
 VACANCIES_FILE = Path(os.getenv("VACANCIES_FILE", _default_store))
 
@@ -339,6 +341,111 @@ def build_digest(new_jobs: list[dict], store: dict) -> tuple[str, str]:
 def deliver_console(body_txt: str) -> None:
     print(body_txt)
 
+
+def _tg_send(text: str) -> None:
+    """Send one message; Telegram max is 4096 chars — split if needed."""
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        raise RuntimeError("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set")
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    chunks = [text[i:i+4000] for i in range(0, len(text), 4000)]
+    for chunk in chunks:
+        payload = json.dumps({
+            "chat_id":    TELEGRAM_CHAT_ID,
+            "text":       chunk,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+        }).encode()
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=15) as r:
+            resp = json.load(r)
+            if not resp.get("ok"):
+                raise RuntimeError(f"Telegram API error: {resp}")
+
+
+def build_tg_digest(new_jobs: list[dict], store: dict) -> str:
+    total = len(store["vacancies"])
+    if not new_jobs:
+        return (
+            f"<b>UK Job Digest — {SEARCH_DATE}</b>\n\n"
+            f"No new senior Kotlin/Java contract roles in the last 24h.\n"
+            f"Total in archive: {total}"
+        )
+
+    lines = [f"<b>UK Job Digest — {SEARCH_DATE}</b>",
+             f"New roles: <b>{len(new_jobs)}</b>  |  Archive: <b>{total}</b>\n"]
+
+    for i, job in enumerate(new_jobs, 1):
+        skills  = ", ".join(job["key_skills"]) or "see description"
+        remote  = " [REMOTE]" if job["remote"] else ""
+        lines.append(
+            f"<b>{i}. {job['title']}</b>\n"
+            f"🏢 {job['company'] or 'not stated'}\n"
+            f"📍 {job['location']}{remote}\n"
+            f"💰 {rate_str(job)}\n"
+            f"⚖️  IR35: {job['ir35_status']}\n"
+            f"🌍 Overseas: {job['overseas_notes']}\n"
+            f"🛠 {skills}\n"
+            f"📅 Posted: {job['created'][:10] if job['created'] else '—'}\n"
+            f"🔗 <a href='{job['redirect_url']}'>Apply</a>\n"
+            f"\n<b>Requirements:</b>\n"
+            f"{job['description'][:800].strip()}"
+            + (" …[full text in archive]" if len(job["description"]) > 800 else "")
+            + "\n"
+        )
+
+    lines.append(f"\n<i>Archive: {VACANCIES_FILE}</i>")
+    return "\n".join(lines)
+
+
+def deliver_telegram(new_jobs: list[dict], store: dict) -> None:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        print("[TG] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — falling back to console",
+              file=sys.stderr)
+        body_txt, _ = build_digest(new_jobs, store)
+        deliver_console(body_txt)
+        return
+
+    # Send header + one message per job (avoids 4096-char limit on big descriptions)
+    total = len(store["vacancies"])
+    try:
+        if not new_jobs:
+            _tg_send(
+                f"<b>UK Job Digest — {SEARCH_DATE}</b>\n\n"
+                f"No new senior Kotlin/Java contract roles in the last 24h.\n"
+                f"Total in archive: <b>{total}</b>"
+            )
+        else:
+            _tg_send(
+                f"<b>UK Job Digest — {SEARCH_DATE}</b>\n"
+                f"New roles: <b>{len(new_jobs)}</b>  |  Archive: <b>{total}</b>"
+            )
+            for i, job in enumerate(new_jobs, 1):
+                skills = ", ".join(job["key_skills"]) or "see description"
+                remote = " [REMOTE]" if job["remote"] else ""
+                desc   = job["description"][:1200].strip()
+                tail   = "\n…<i>[truncated — full text in archive]</i>" if len(job["description"]) > 1200 else ""
+                msg = (
+                    f"<b>{i}. {job['title']}</b>\n"
+                    f"🏢 <b>Company:</b> {job['company'] or 'not stated'}\n"
+                    f"📍 <b>Location:</b> {job['location']}{remote}\n"
+                    f"💰 <b>Rate:</b> {rate_str(job)}\n"
+                    f"⚖️  <b>IR35:</b> {job['ir35_status']}\n"
+                    f"🌍 <b>Overseas:</b> {job['overseas_notes']}\n"
+                    f"🛠 <b>Skills:</b> {skills}\n"
+                    f"📅 <b>Posted:</b> {job['created'][:10] if job['created'] else '—'}\n"
+                    f"🔗 <b>Apply:</b> <a href='{job['redirect_url']}'>{job['redirect_url']}</a>\n\n"
+                    f"<b>Full requirements:</b>\n{desc}{tail}"
+                )
+                _tg_send(msg)
+        print(f"[TG] Digest sent to chat {TELEGRAM_CHAT_ID}")
+    except Exception as e:
+        print(f"[TG] Send failed: {e} — falling back to console", file=sys.stderr)
+        body_txt, _ = build_digest(new_jobs, store)
+        deliver_console(body_txt)
+
+
 def deliver_email(body_txt: str, body_html: str, new_count: int) -> None:
     if not EMAIL_TO:
         print("[EMAIL] EMAIL_TO not set — falling back to console", file=sys.stderr)
@@ -391,7 +498,9 @@ def main() -> None:
 
     body_txt, body_html = build_digest(new_jobs, store)
 
-    if DELIVERY == "email":
+    if DELIVERY == "telegram":
+        deliver_telegram(new_jobs, store)
+    elif DELIVERY == "email":
         deliver_email(body_txt, body_html, len(new_jobs))
     else:
         deliver_console(body_txt)
