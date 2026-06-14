@@ -126,6 +126,95 @@ def extract_skills(text: str) -> list[str]:
     return [name for name, pattern in SKILLS.items() if re.search(pattern, text)]
 
 
+def _job_text(job: dict) -> str:
+    return (job.get("title", "") + " " + job.get("description", "")).lower()
+
+
+# ── Radar classification (overseas-contractor fit) ───────────────────────────
+
+# Onsite / hybrid signals — any required UK presence is a structural blocker
+_HYBRID_RE = re.compile(
+    r"\bhybrid\b"
+    r"|\bon[\s-]?site\b"
+    r"|\bin[\s-]the[\s-]office\b"
+    r"|\b\d\s*days?\s*(?:a|per)\s*week\b"
+    r"|\bdays?\s*(?:a|per)\s*week\s*(?:in|on)\b"
+    r"|\boccasional(?:ly)?\s*(?:travel|visit|on[\s-]?site|office)\b"
+    r"|\btravel\s*to\s*(?:the\s*)?(?:office|london|client)\b"
+    r"|\bweekly\s*in\s*the\s*office\b",
+    re.IGNORECASE,
+)
+
+_FULLY_REMOTE_RE = re.compile(
+    r"\bfully\s*remote\b|\b100%\s*remote\b|\bremote[\s-]first\b"
+    r"|\bwork\s*from\s*anywhere\b|\bremote\s*\(?\s*(?:worldwide|global|europe|eu)\b",
+    re.IGNORECASE,
+)
+_REMOTE_RE = re.compile(r"\bremote\b|\bwork\s*from\s*home\b|\bwfh\b", re.IGNORECASE)
+
+# UK-residency / clearance restrictions that exclude an overseas contractor
+_UK_ONLY_RE = re.compile(
+    r"\buk[\s-]based\b"
+    r"|\bbased\s*(?:in|within)\s*(?:the\s*)?uk\b"
+    r"|\buk\s*residents?\b"
+    r"|\bmust\s*(?:be\s*)?(?:located|reside|live)\s*(?:in|within)\s*(?:the\s*)?uk\b"
+    r"|\bright\s*to\s*work\s*in\s*the\s*uk\b"
+    r"|\bmust\s*have\s*(?:the\s*)?right\s*to\s*work\b"
+    r"|\bno\s*sponsorship\b|\b(?:cannot|unable\s*to)\s*(?:provide\s*)?sponsor"
+    r"|\bsc\s*clear|\bdv\s*clear|\bsecurity\s*clear|\bbpss\b"
+    r"|\beligible\s*to\s*work\s*in\s*the\s*uk\b",
+    re.IGNORECASE,
+)
+
+# Agency / recruiter signals
+_AGENCY_NAME_RE = re.compile(
+    r"recruit|consult|resourc|talent|staffing|\bsearch\b|people|solutions"
+    r"|associates|partners|frank\b|harvey nash|hays|robert half|lorien|experis"
+    r"|sthree|nigel frank|understanding|oliver bernard|technet|virtuetech|spinks"
+    r"|opus|x4|tenth revolution|in technology|cv-?library",
+    re.IGNORECASE,
+)
+_AGENCY_PHRASE_RE = re.compile(
+    r"\bour\s*client\b|\bmy\s*client\b|\bon\s*behalf\s*of\b"
+    r"|\bwe\s*are\s*(?:working\s*with|partnering)\b|\bworking\s*(?:with|on\s*behalf)\b"
+    r"|\bleading\s*(?:recruitment|agency)\b|\b(?:a|our)\s*(?:client|customer)\s*(?:is|are|based)\b",
+    re.IGNORECASE,
+)
+
+
+def remote_type(job: dict) -> str:
+    """fully_remote | hybrid | remote_unclear | onsite | unknown"""
+    t = _job_text(job)
+    if _HYBRID_RE.search(t):
+        return "hybrid"
+    if _FULLY_REMOTE_RE.search(t):
+        return "fully_remote"
+    if _REMOTE_RE.search(t):
+        return "remote_unclear"
+    return "unknown"
+
+
+def is_uk_only(job: dict) -> bool:
+    return bool(_UK_ONLY_RE.search(_job_text(job)))
+
+
+def client_type(job: dict) -> str:
+    """direct | agency | unknown"""
+    name = job.get("company", "") or ""
+    text = job.get("description", "") or ""
+    agency = bool(_AGENCY_NAME_RE.search(name)) or bool(_AGENCY_PHRASE_RE.search(text))
+    if agency:
+        return "agency"
+    if name.strip():           # named end-employer, no agency markers
+        return "direct"
+    return "unknown"
+
+
+def overseas_fit(job: dict) -> bool:
+    """Structurally applicable for a non-UK-resident contractor."""
+    return remote_type(job) == "fully_remote" and not is_uk_only(job)
+
+
 def parse_rate(job: dict) -> float | None:
     """Return the best daily-rate estimate from a job record."""
     lo = job.get("salary_min")
@@ -144,10 +233,6 @@ def parse_rate(job: dict) -> float | None:
     return d_lo or d_hi
 
 
-def is_fully_remote(job: dict) -> bool:
-    return bool(job.get("remote"))
-
-
 def is_outside_ir35(job: dict) -> bool:
     return "outside" in job.get("ir35_status", "").lower()
 
@@ -162,9 +247,10 @@ def load_jobs(path: Path) -> list[dict]:
 
 
 def filter_jobs(jobs: list[dict], min_rate: float) -> list[dict]:
+    """Strict overseas-contractor filter: fully remote, not UK-only, outside IR35, rate."""
     out = []
     for job in jobs:
-        if not is_fully_remote(job):
+        if not overseas_fit(job):
             continue
         if not is_outside_ir35(job):
             continue
@@ -173,6 +259,28 @@ def filter_jobs(jobs: list[dict], min_rate: float) -> list[dict]:
             continue
         out.append(job)
     return out
+
+
+def radar_funnel(jobs: list[dict], min_rate: float) -> dict:
+    """Step-by-step attrition so you can see where roles drop out."""
+    f = {"total": len(jobs)}
+    s1 = [j for j in jobs if remote_type(j) == "fully_remote"]
+    f["fully_remote"] = len(s1)
+    f["hybrid"]       = sum(1 for j in jobs if remote_type(j) == "hybrid")
+    f["remote_unclear"] = sum(1 for j in jobs if remote_type(j) == "remote_unclear")
+    s2 = [j for j in s1 if not is_uk_only(j)]
+    f["not_uk_only"]  = len(s2)
+    f["uk_only_dropped"] = len(s1) - len(s2)
+    s3 = [j for j in s2 if is_outside_ir35(j)]
+    f["outside_ir35"] = len(s3)
+    f["no_rate_data"] = sum(1 for j in s3 if parse_rate(j) is None)
+    s4 = [j for j in s3 if (r := parse_rate(j)) is not None and r >= min_rate]
+    f["rate_ok"] = len(s4)
+    # client split on the final cleaned set
+    f["final_direct"] = sum(1 for j in s4 if client_type(j) == "direct")
+    f["final_agency"] = sum(1 for j in s4 if client_type(j) == "agency")
+    f["final_unknown"] = sum(1 for j in s4 if client_type(j) == "unknown")
+    return f
 
 
 def skill_frequency(jobs: list[dict]) -> Counter:
@@ -238,14 +346,33 @@ def print_report(jobs_all: list[dict], jobs_filtered: list[dict],
 
     print(f"\n{'='*60}")
     print(f"  UK CONTRACT JOB SKILL ANALYSIS")
-    print(f"  Filter: fully remote | outside IR35 | >= £{min_rate:.0f}/day")
+    print(f"  Filter: fully remote (overseas-OK) | outside IR35 | >= £{min_rate:.0f}/day")
     print(f"{'='*60}")
     print(f"  Total in archive:  {len(jobs_all)}")
     print(f"  After filter:      {len(jobs_filtered)}")
 
+    # ── Radar funnel: where roles drop out ───────────────────────
+    f = radar_funnel(jobs_all, min_rate)
+    print(f"\n{'─'*60}")
+    print(f"  RADAR FUNNEL  (overseas-contractor structural fit)")
+    print(f"{'─'*60}")
+    print(f"  Total collected ............... {f['total']:>3}")
+    print(f"  ├─ fully remote ............... {f['fully_remote']:>3}")
+    print(f"  │   (dropped: hybrid {f['hybrid']}, remote-unclear {f['remote_unclear']})")
+    print(f"  ├─ not UK-only / no clearance . {f['not_uk_only']:>3}   (−{f['uk_only_dropped']} UK-only)")
+    print(f"  ├─ outside IR35 ............... {f['outside_ir35']:>3}")
+    print(f"  └─ rate >= £{min_rate:.0f}/day ......... {f['rate_ok']:>3}  ← your reachable pool")
+    if f["no_rate_data"]:
+        print(f"      (note: {f['no_rate_data']} outside-IR35 roles had NO rate data — "
+              f"excluded here, may still qualify)")
+    print(f"\n  Final pool by client type:")
+    print(f"    • Direct client ... {f['final_direct']:>3}   (best — hire internationally)")
+    print(f"    • Agency .......... {f['final_agency']:>3}   (often UK-only by default)")
+    print(f"    • Unknown ......... {f['final_unknown']:>3}")
+
     if not jobs_filtered:
-        print("\n  No jobs match the criteria yet.")
-        print("  Run:  DAYS_LOOKBACK=165 bash run_digest.sh  to collect more data.")
+        print("\n  No jobs pass the strict overseas filter yet.")
+        print("  Re-run with full descriptions: ENRICH=1 DAYS_LOOKBACK=165 bash run_digest.sh")
         return
 
     # ── Skill frequency ──────────────────────────────────────────
@@ -322,6 +449,21 @@ def print_report(jobs_all: list[dict], jobs_filtered: list[dict],
             cnt = sum(1 for r in rates if lo <= r < hi)
             label = f"£{lo}–£{hi}/d" if hi < 9999 else f"£{lo}+/d"
             print(f"  {label:<14} {'█'*cnt} {cnt}")
+
+    # ── The actual reachable shortlist ───────────────────────────
+    print(f"\n{'─'*60}")
+    print(f"  YOUR SHORTLIST  (fully remote · not UK-only · outside IR35 · £{min_rate:.0f}+)")
+    print(f"{'─'*60}")
+    # direct clients first — they hire internationally more often
+    ranked = sorted(jobs_filtered,
+                    key=lambda j: (client_type(j) != "direct", -(parse_rate(j) or 0)))
+    for job in ranked:
+        ct = client_type(job)
+        tag = {"direct": "[DIRECT]", "agency": "[agency]", "unknown": "[?]"}[ct]
+        rate = parse_rate(job)
+        rate_s = f"£{rate:.0f}/d" if rate else "rate n/a"
+        print(f"  {tag:<9} {rate_s:<9} {job['title'][:50]}")
+        print(f"            {job.get('company') or '—'}  |  {job.get('redirect_url','')[:60]}")
 
     print(f"\n{'='*60}\n")
 
