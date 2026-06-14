@@ -154,10 +154,10 @@ def is_outside_ir35(job: dict) -> bool:
 
 # ── Analysis ──────────────────────────────────────────────────────────────────
 
-def load_jobs() -> list[dict]:
-    if not VACANCIES_FILE.exists():
-        sys.exit(f"[ERROR] Archive not found: {VACANCIES_FILE}\nRun: DAYS_LOOKBACK=165 bash run_digest.sh")
-    store = json.loads(VACANCIES_FILE.read_text())
+def load_jobs(path: Path) -> list[dict]:
+    if not path.exists():
+        sys.exit(f"[ERROR] Archive not found: {path}\nRun: DAYS_LOOKBACK=165 bash run_digest.sh")
+    store = json.loads(path.read_text())
     return list(store.get("vacancies", {}).values())
 
 
@@ -329,6 +329,7 @@ def print_report(jobs_all: list[dict], jobs_filtered: list[dict],
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
+    default_file = str(Path(__file__).parent / "data" / "job_vacancies.json")
     p = argparse.ArgumentParser(description="Analyse job vacancies archive")
     p.add_argument("--min-rate",  type=float, default=500,
                    help="Minimum daily rate in GBP (default: 500)")
@@ -336,14 +337,12 @@ def main():
                    help="Number of top skills to show (default: 25)")
     p.add_argument("--clusters",  type=int,   default=0,
                    help="K-means clusters (0=off, needs scikit-learn)")
-    p.add_argument("--file",      type=str,   default=str(VACANCIES_FILE),
+    p.add_argument("--file",      type=str,   default=default_file,
                    help="Path to job_vacancies.json")
     args = p.parse_args()
 
-    global VACANCIES_FILE
-    VACANCIES_FILE = Path(args.file)
-
-    jobs_all      = load_jobs()
+    path          = Path(args.file)
+    jobs_all      = load_jobs(path)
     jobs_filtered = filter_jobs(jobs_all, args.min_rate)
     print_report(jobs_all, jobs_filtered, args.min_rate, args.top, args.clusters)
 
