@@ -45,23 +45,30 @@ def fetch_adzuna() -> list[dict]:
         print("[ADZUNA] Skipped — ADZUNA_APP_ID / ADZUNA_APP_KEY not set", file=sys.stderr)
         return []
 
+    # Weekdays: 1 day window; weekends: extend to 3 days to catch Friday posts
+    from datetime import date
+    days_old = 3 if date.today().weekday() >= 5 else 1
+
     results = []
-    for query in ["senior kotlin contract", "senior java contract"]:
+    for query in ["senior kotlin contract", "senior java contract",
+                  "kotlin developer contract", "java developer contract"]:
         params = urllib.parse.urlencode({
-            "app_id":       ADZUNA_APP_ID,
-            "app_key":      ADZUNA_APP_KEY,
+            "app_id":           ADZUNA_APP_ID,
+            "app_key":          ADZUNA_APP_KEY,
             "results_per_page": 50,
-            "what":         query,
-            "where":        "UK",
-            "contract":     1,
-            "max_days_old": 1,
-            "content-type": "application/json",
+            "what":             query,
+            "where":            "UK",
+            "max_days_old":     days_old,
+            "sort_by":          "date",
         })
         url = f"https://api.adzuna.com/v1/api/jobs/gb/search/1?{params}"
         try:
             with urllib.request.urlopen(url, timeout=15) as r:
                 data = json.load(r)
-            for job in data.get("results", []):
+            found = data.get("results", [])
+            print(f"[ADZUNA] '{query}': {len(found)} results (last {days_old}d)",
+                  file=sys.stderr)
+            for job in found:
                 results.append(parse_adzuna(job))
         except urllib.error.HTTPError as e:
             print(f"[ADZUNA] HTTP {e.code} for '{query}': {e.reason}", file=sys.stderr)
@@ -242,7 +249,8 @@ def accumulate(store: dict, new_jobs: list[dict]) -> tuple[list[dict], list[dict
 
 def is_senior(job: dict) -> bool:
     t = (job["title"] + " " + job["description"]).lower()
-    senior_kw = ["senior", "lead", "principal", "staff engineer", "sr."]
+    senior_kw = ["senior", "lead", "principal", "staff engineer", "sr.", "architect",
+                 "5+ years", "5 years", "6+ years", "7+ years", "8+ years"]
     return any(k in t for k in senior_kw)
 
 def is_kotlin_or_java(job: dict) -> bool:
