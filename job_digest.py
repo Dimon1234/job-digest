@@ -188,9 +188,12 @@ WEB_QUERIES = [
 
 def fetch_web() -> list[dict]:
     try:
-        from duckduckgo_search import DDGS
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
     except ImportError:
-        print("[WEB] Skipped — install: pip install duckduckgo-search", file=sys.stderr)
+        print("[WEB] Skipped — install: pip install ddgs", file=sys.stderr)
         return []
 
     results = []
