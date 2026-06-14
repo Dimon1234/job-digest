@@ -16,4 +16,8 @@ set -o allexport
 source "$ENV_FILE"
 set +o allexport
 
-exec python3 "$SCRIPT_DIR/job_digest.py"
+# Use venv if it exists, otherwise fall back to system python3
+VENV="$SCRIPT_DIR/.venv/bin/python3"
+PYTHON=$([ -x "$VENV" ] && echo "$VENV" || echo "python3")
+
+exec "$PYTHON" "$SCRIPT_DIR/job_digest.py"
