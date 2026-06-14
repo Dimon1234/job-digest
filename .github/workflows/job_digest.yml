@@ -1,18 +1,17 @@
-name: UK Job Digest — Senior Kotlin/Java Contracts
+name: UK Job Digest - Senior Kotlin/Java Contracts
 
 on:
   schedule:
-    # Every day at 08:00 UTC
     - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       delivery:
-        description: "Delivery mode (email / console)"
+        description: "Delivery mode: email or console"
         required: false
         default: "email"
 
 permissions:
-  contents: write   # needed to commit job_vacancies.json back to repo
+  contents: write
 
 jobs:
   digest:
@@ -22,8 +21,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -35,7 +32,7 @@ jobs:
           ADZUNA_APP_ID:  ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
           REED_API_KEY:   ${{ secrets.REED_API_KEY }}
-          DELIVERY:       ${{ github.event.inputs.delivery || 'email' }}
+          DELIVERY:       ${{ inputs.delivery || 'email' }}
           EMAIL_TO:       ${{ secrets.EMAIL_TO }}
           SMTP_HOST:      ${{ secrets.SMTP_HOST }}
           SMTP_PORT:      ${{ secrets.SMTP_PORT }}
@@ -48,6 +45,5 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/job_vacancies.json
-          # only commit if there are actual changes
-          git diff --cached --quiet || git commit -m "chore: update job vacancies archive $(date -u +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "chore: update vacancies archive $(date -u +%Y-%m-%d)"
           git push
