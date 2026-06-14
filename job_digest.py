@@ -32,6 +32,7 @@ SMTP_USER        = os.getenv("SMTP_USER", EMAIL_TO)
 SMTP_PASS        = os.getenv("SMTP_PASS", "")
 TELEGRAM_TOKEN   = os.getenv("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
+DAYS_LOOKBACK    = int(os.getenv("DAYS_LOOKBACK", "0"))  # 0 = auto (1d weekday / 3d weekend)
 _default_store = Path(__file__).parent / "data" / "job_vacancies.json"
 VACANCIES_FILE = Path(os.getenv("VACANCIES_FILE", _default_store))
 
@@ -45,35 +46,50 @@ def fetch_adzuna() -> list[dict]:
         print("[ADZUNA] Skipped — ADZUNA_APP_ID / ADZUNA_APP_KEY not set", file=sys.stderr)
         return []
 
-    # Weekdays: 1 day window; weekends: extend to 3 days to catch Friday posts
     from datetime import date
-    days_old = 3 if date.today().weekday() >= 5 else 1
+    if DAYS_LOOKBACK > 0:
+        days_old = DAYS_LOOKBACK
+    else:
+        days_old = 3 if date.today().weekday() >= 5 else 1
+
+    queries = ["senior kotlin contract", "senior java contract",
+               "kotlin developer contract", "java developer contract"]
 
     results = []
-    for query in ["senior kotlin contract", "senior java contract",
-                  "kotlin developer contract", "java developer contract"]:
-        params = urllib.parse.urlencode({
-            "app_id":           ADZUNA_APP_ID,
-            "app_key":          ADZUNA_APP_KEY,
-            "results_per_page": 50,
-            "what":             query,
-            "where":            "UK",
-            "max_days_old":     days_old,
-            "sort_by":          "date",
-        })
-        url = f"https://api.adzuna.com/v1/api/jobs/gb/search/1?{params}"
-        try:
-            with urllib.request.urlopen(url, timeout=15) as r:
-                data = json.load(r)
-            found = data.get("results", [])
-            print(f"[ADZUNA] '{query}': {len(found)} results (last {days_old}d)",
-                  file=sys.stderr)
-            for job in found:
-                results.append(parse_adzuna(job))
-        except urllib.error.HTTPError as e:
-            print(f"[ADZUNA] HTTP {e.code} for '{query}': {e.reason}", file=sys.stderr)
-        except Exception as e:
-            print(f"[ADZUNA] Error for '{query}': {e}", file=sys.stderr)
+    for query in queries:
+        page, total_pages = 1, 1
+        while page <= total_pages:
+            params = urllib.parse.urlencode({
+                "app_id":           ADZUNA_APP_ID,
+                "app_key":          ADZUNA_APP_KEY,
+                "results_per_page": 50,
+                "what":             query,
+                "where":            "UK",
+                "max_days_old":     days_old,
+                "sort_by":          "date",
+            })
+            url = f"https://api.adzuna.com/v1/api/jobs/gb/search/{page}?{params}"
+            try:
+                with urllib.request.urlopen(url, timeout=15) as r:
+                    data = json.load(r)
+                count    = data.get("count", 0)
+                found    = data.get("results", [])
+                total_pages = max(1, (count + 49) // 50)  # ceil division
+                print(f"[ADZUNA] '{query}' p{page}/{total_pages}: "
+                      f"{len(found)} jobs (total ~{count}, last {days_old}d)",
+                      file=sys.stderr)
+                for job in found:
+                    results.append(parse_adzuna(job))
+                if not found:
+                    break
+                page += 1
+            except urllib.error.HTTPError as e:
+                print(f"[ADZUNA] HTTP {e.code} p{page} '{query}': {e.reason}",
+                      file=sys.stderr)
+                break
+            except Exception as e:
+                print(f"[ADZUNA] Error p{page} '{query}': {e}", file=sys.stderr)
+                break
     return results
 
 
